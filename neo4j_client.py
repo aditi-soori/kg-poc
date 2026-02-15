@@ -172,22 +172,6 @@ class Neo4jClient:
                     name=var['name']
                 )
         
-    # def link_methods_to_classes(self):
-    #     #
-    #     with self.driver.session() as session:
-    #         # This is a simple heuristic: if a function's name appears in the class's methods
-    #         # In a real implementation, you'd track this during parsing
-    #         result = session.run(
-    #             """
-    #             MATCH (c:Class)-[:CONTAINS]->(:Function)
-    #             RETURN count(*) as count
-    #             """
-    #         )
-    #         # For now, we'll create HAS_METHOD based on file proximity
-    #         # This is simplified - in reality you'd track this during AST traversal
-        
-    #     print("✓ Linked methods to classes")
-    
     def build_graph(self, parsed_data):
         #create nodes + relationships
         self.create_file_nodes(parsed_data['files'])
@@ -197,29 +181,3 @@ class Neo4jClient:
         self.create_import_nodes(parsed_data['imports'])
         self.create_call_relationships(parsed_data['calls'])
     
-    # def get_stats(self):
-        """Get statistics about the knowledge graph"""
-        with self.driver.session() as session:
-            stats = {}
-            
-            # Count nodes
-            result = session.run("MATCH (f:File) RETURN count(f) as count")
-            stats['files'] = result.single()['count']
-            
-            result = session.run("MATCH (func:Function) RETURN count(func) as count")
-            stats['functions'] = result.single()['count']
-            
-            result = session.run("MATCH (c:Class) RETURN count(c) as count")
-            stats['classes'] = result.single()['count']
-            
-            result = session.run("MATCH (v:Variable) RETURN count(v) as count")
-            stats['variables'] = result.single()['count']
-            
-            result = session.run("MATCH (i:Import) RETURN count(i) as count")
-            stats['imports'] = result.single()['count']
-            
-            # Count relationships
-            result = session.run("MATCH ()-[r:CALLS]->() RETURN count(r) as count")
-            stats['call_relationships'] = result.single()['count']
-            
-            return stats
