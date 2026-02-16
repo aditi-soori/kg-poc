@@ -2,7 +2,7 @@ import os
 from tree_sitter_languages import get_language, get_parser
 
 class CodeParser:
-    def __init__(self) :
+    def __init__(self):
         self.PY_LANGUAGE = get_language('python')
         self.parser = get_parser('python')
     
@@ -21,7 +21,7 @@ class CodeParser:
         ##get all functions from ast
         functions = []
 
-        def traverse(node, parent_class=None):
+        def traverse(node):
             ##if node is a function -> get function name -> extract params,func_name..
             if node.type == "function_definition":
                 name_node = node.child_by_field_name('name') ##get function name
@@ -32,7 +32,7 @@ class CodeParser:
                     ## get params from function -> loop throught params -> get identifiers
                     params_node = node.child_by_field_name('parameters') ##get params
                     if params_node:
-                        for child  in params_node.children:
+                        for child in params_node.children:
                             if child.type == 'identifier':
                                 param_name = source_code[child.start_byte:child.end_byte].decode('utf-8') ##convert to string
                                 params.append(param_name)
@@ -41,22 +41,11 @@ class CodeParser:
                         'name': func_name,
                         'line_number': node.start_point[0] + 1,#line numbers start at 0
                         'file_path': file_path,
-                        'parameters': params,
-                        'parent_class': parent_class ##which class func belongs to
+                        'parameters': params
                     })
             
-            ##if class, pass name to children
-            elif node.type == "class_definition":
-                name_node = node.child_by_field_name('name')
-                if name_node:
-                    class_name = source_code[name_node.start_byte:name_node.end_byte].decode('utf-8')
-                    #traverse children witht this class name
-                    for child in node.children:
-                        traverse(child, parent_class=class_name)
-                    return 
-            
             for child in node.children:
-                traverse(child, parent_class)
+                traverse(child)
         traverse(tree.root_node) ##top of ast->file
         return functions
 
@@ -77,14 +66,14 @@ class CodeParser:
                     })
             
             for child in node.children:
-                traverse(child,parent_class)
+                traverse(child, parent_class)
         traverse(tree.root_node)
         return classes
     
     def fetch_variables(self, tree, source_code, file_path):
         ##handles only top level variables
         ##neeed to work on extracting tuples, attributes, type annotations
-        variables=[]
+        variables = []
         def traverse(node, depth=0):
             ##check if cur__node is of type assignment and depth=1 to ensure only top level vars and should be direclty  under module
             if node.type == 'assignment' and depth == 1:
@@ -98,7 +87,7 @@ class CodeParser:
                     })
             
             for child in node.children:
-                traverse(child, depth +1)
+                traverse(child, depth + 1)
         
         traverse(tree.root_node)
         return variables
@@ -107,14 +96,14 @@ class CodeParser:
 
     def fetch_function_calls(self, tree, source_code, file_path):
         ##functions -> nodes ; calls-> edges
-        calls=[]
+        calls = []
         ##get name of function we are currently inside
         def traverse(node, in_function=None):
             if node.type == 'function_definition':
                 name_node = node.child_by_field_name('name')
                 if name_node:
                     func_name = source_code[name_node.start_byte:name_node.end_byte].decode('utf-8')
-                ##traverse function body pass funcname return so that no double traversa,
+                    ##traverse function body pass funcname return so that no double traversa,
                     for child in node.children:
                         traverse(child, in_function=func_name)
                 return 
@@ -125,7 +114,8 @@ class CodeParser:
                 if function_node and in_function:
                     if function_node.type == 'identifier':
                         called_func = source_code[function_node.start_byte:function_node.end_byte].decode('utf-8')
-                    
+                        
+                        # ✅ FIXED: moved inside the if block
                         calls.append({
                             'caller': in_function,
                             'callee': called_func,
@@ -182,12 +172,12 @@ class CodeParser:
         }
         
         for root, dirs, files in os.walk(directory_path):
-            dirs[:] = [d for d in dirs if d not in ['venv','.git', 'node_modules', 'dist', 'build']]
+            dirs[:] = [d for d in dirs if d not in ['venv', '.git', 'node_modules', 'dist', 'build']]
             
             for file in files:
                 if any(file.endswith(ext) for ext in ['.py']):
                     file_path = os.path.join(root, file)
-                    ##parse file ,get ast
+                    ##parse file, get ast
                     try:
                         print(f"Parsing: {file_path}")
                         tree, source_code = self.parse_file(file_path)

@@ -171,24 +171,7 @@ class Neo4jClient:
                     file_path=var['file_path'],
                     name=var['name']
                 )
-
-    def link_methods_to_classes(self, functions):
-        #link method to parent class
-        with self.driver.session() as session:
-            for func in functions:
-                ##only if func has parent class 
-                if func.get('parent_class'):
-                    session.run(
-                        """
-                        MATCH (c:Class {name: $class_name, file_path: $file_path})
-                        MATCH (m:Function {name: $method_name, file_path: $file_path})
-                        MERGE (c)-[:HAS_METHOD]->(m)
-                        """,
-                        class_name=func['parent_class'],
-                        method_name=func['name'],
-                        file_path=func['file_path']
-                    )
-                
+        
     def build_graph(self, parsed_data):
         #create nodes + relationships
         self.create_file_nodes(parsed_data['files'])
@@ -197,5 +180,4 @@ class Neo4jClient:
         self.create_variable_nodes(parsed_data['variables'])
         self.create_import_nodes(parsed_data['imports'])
         self.create_call_relationships(parsed_data['calls'])
-        self.link_methods_to_classes(parsed_data['functions'])
     
