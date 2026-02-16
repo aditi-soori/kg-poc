@@ -120,12 +120,20 @@ class CodeParser:
                 return 
             ##if curr node is a call
             if node.type == 'call':
+                called_func = None 
                 function_node = node.child_by_field_name('function')
                 #only if we are in a function store relation
                 if function_node and in_function:
                     if function_node.type == 'identifier':
                         called_func = source_code[function_node.start_byte:function_node.end_byte].decode('utf-8')
-                    
+                
+                    ##handle method calks
+                    elif function_node.type == 'attribute':
+                        attr_node = function_node.child_by_field_name('attribute')
+                        if attr_node:
+                            called_func = source_code[attr_node.start_byte:attr_node.end_byte].decode('utf-8')
+
+                    if called_func:
                         calls.append({
                             'caller': in_function,
                             'callee': called_func,

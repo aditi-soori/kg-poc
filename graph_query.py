@@ -173,14 +173,14 @@ class GraphQuery:
     def close(self):
         self.neo4j.close()
 
-def interactive_mode():
+def query():
     queryer = GraphQuery() 
     print("==KG QUERY==")
     while True:
         print("1.Find all functions in the file")
         print("2.Find files that have the variable")
-        print("3.What calls a function?")
-        print("4.What does a function call?")
+        print("3.Which function/method calls function/method x ")
+        print("4.Which function/method does x call")
         print("5.List of all methods in the class")
         print("6.List of all imports in file")
         print("7.List all files")
@@ -227,4 +227,4 @@ def interactive_mode():
     queryer.close()
 
 if __name__ == "__main__":
-    interactive_mode()
+    query()
